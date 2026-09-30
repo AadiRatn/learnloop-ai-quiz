@@ -96,17 +96,36 @@ if page=='Prepare':
             st.warning("🔒 API key not found. When deploying to Streamlit Cloud, add your Groq API key to the App Secrets. For local testing, add it to `.streamlit/secrets.toml`.")
         
         if st.button('Generate Questions via Groq API', type='primary', disabled=not groq_api_key):
+            generation_stage = 'Groq API request'
             with st.spinner("Generating questions live using Qwen..."):
                 try:
                     from quiz_core import generate_live
                     result = generate_live(job, groq_api_key)
+                    generation_stage = 'response validation and import'
                     pack=store.import_pack(selected,result)
                     st.success(f'Imported {len(pack["questions"])} draft questions; {len(pack["rejected"])} rejected. Open Review to check and approve them.')
                 except Exception as exc:
-                    # Provider exception text can include request details; keep it in
-                    # server logs and show a safe, actionable message in the UI.
-                    st.error('Generation failed. Check that the Groq key is valid and that the service is reachable and within quota. No questions were imported.')
-                    print(f'LearnLoop Groq generation failed: {type(exc).__name__}')
+                    # Keep request text, user notes, credentials, and provider messages
+                    # out of the UI and logs. Preserve only a safe error category.
+                    cause = exc.__cause__ or exc.__context__
+                    diagnostic = cause or exc
+                    error_type = type(diagnostic).__name__
+                    status_code = getattr(diagnostic, 'status_code', None)
+                    if generation_stage == 'response validation and import':
+                        st.error('Groq returned a response that did not pass LearnLoop’s question checks. No questions were imported.')
+                    elif error_type == 'AuthenticationError':
+                        st.error('Groq rejected the configured credentials. Verify that the key is active and has access to this model.')
+                    elif error_type == 'RateLimitError':
+                        st.error('Groq rate or quota limit reached. Check the account limits and retry later.')
+                    elif error_type == 'APIConnectionError':
+                        st.error('LearnLoop could not reach Groq. Check service availability and retry.')
+                    elif status_code is not None and int(status_code) >= 500:
+                        st.error('Groq returned a service error. Retry later; no questions were imported.')
+                    elif status_code is not None and int(status_code) >= 400:
+                        st.error('Groq rejected the request. Check the model request configuration; no questions were imported.')
+                    else:
+                        st.error('Groq generation failed. Check the service and account limits; no questions were imported.')
+                    print(f'LearnLoop generation diagnostic: stage={generation_stage}, type={error_type}, status={status_code}')
 
 elif page=='Review':
     st.title('Check before you quiz')
