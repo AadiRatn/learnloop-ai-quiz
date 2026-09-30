@@ -23,6 +23,7 @@ st.markdown('''<style>
 [data-testid="stMetric"]{background:white;border:1px solid #e3e9f0;border-radius:14px;padding:18px;color:#203a4f}[data-testid="stMetricLabel"],[data-testid="stMetricValue"],[data-testid="stMetricDelta"]{color:#203a4f!important}
 [data-testid="stForm"]{background:white;border:1px solid #e1e7ef;border-radius:14px;padding:22px}
 .stMarkdown p,.stMarkdown li,.stCaption,.stText,[data-testid="stCaptionContainer"],label{color:#36516a}
+.topic-score{margin:.8rem 0 1rem;color:#203a4f}.topic-score-label{display:flex;justify-content:space-between;gap:1rem;margin-bottom:.35rem;font-size:.95rem}.topic-score-track{height:12px;background:#e3e9f0;border-radius:999px;overflow:hidden}.topic-score-fill{height:100%;background:#168a78;border-radius:999px}
 .hero{background:#173b55;color:#fff;padding:30px 34px;border-radius:18px;margin:0 0 24px}.hero h2{color:white;margin:4px 0;font-size:2rem}.hero p{color:#b7cedd;margin:5px 0}.eyebrow{font-size:11px;letter-spacing:2px;color:#70d5c1}
 .source{border-left:3px solid #3ea996;background:#eef7f4;padding:12px 18px;margin:12px 0;color:#365c52}
 </style>''',unsafe_allow_html=True)
@@ -200,7 +201,20 @@ elif page=='Progress':
     x,y,z=st.columns(3);x.metric('Latest score',f'{r["percent"]}%');y.metric('Completed attempts',len(attempts));z.metric('Topics to revise',len(weak))
     rows=[{'Topic':t,'Correct':s['correct'],'Questions':s['total'],'Score (%)':round(100*s['correct']/s['total'],1),'Next step':'Revise source and retry' if t in weak else 'Try new questions'} for t,s in r['topics'].items()]
     st.dataframe(pd.DataFrame(rows),hide_index=True,use_container_width=True)
-    st.bar_chart(pd.DataFrame(rows).set_index('Topic')[['Score (%)']])
+    # Render topic bars directly so Progress does not depend on Streamlit's
+    # optional Altair chart stack, which can fail on newer Community Cloud Python.
+    topic_bars=['<div aria-label="Topic scores">']
+    for row in rows:
+        score=max(0,min(100,float(row['Score (%)'])))
+        topic=html.escape(str(row['Topic']))
+        topic_bars.append(
+            f'<div class="topic-score"><div class="topic-score-label"><span>{topic}</span>'
+            f'<strong>{score:g}%</strong></div><div class="topic-score-track" role="meter" '
+            f'aria-label="{topic} score" aria-valuemin="0" aria-valuemax="100" '
+            f'aria-valuenow="{score:g}"><div class="topic-score-fill" style="width:{score:g}%"></div></div></div>'
+        )
+    topic_bars.append('</div>')
+    st.markdown(''.join(topic_bars),unsafe_allow_html=True)
     st.subheader('Your next study session')
     if weak:
         for topic in weak:st.write(f'• Re-read **{topic}**, explain the missed concepts in your own words, then use Weak topics practice.')
