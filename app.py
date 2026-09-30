@@ -17,9 +17,12 @@ if 'learnloop_db_path' not in st.session_state:
     )
 store=Store(st.session_state['learnloop_db_path'])
 st.markdown('''<style>
-.stApp{background:#f7f8fb}h1,h2,h3{letter-spacing:-.03em;color:#203a4f}h1{font-size:2.8rem!important}
-[data-testid="stSidebar"]{background:#eaf0f5}[data-testid="stMetric"]{background:white;border:1px solid #e3e9f0;border-radius:14px;padding:18px}
+.stApp{background:#f7f8fb;color:#203a4f}h1,h2,h3{letter-spacing:-.03em;color:#203a4f}h1{font-size:2.8rem!important}
+[data-testid="stAppViewContainer"],[data-testid="stMain"],[data-testid="stMainBlockContainer"],[data-testid="stVerticalBlock"]{color:#203a4f}
+[data-testid="stSidebar"]{background:#eaf0f5;color:#203a4f}[data-testid="stSidebar"] [data-testid="stMarkdownContainer"], [data-testid="stSidebar"] label, [data-testid="stSidebar"] p{color:#36516a!important}
+[data-testid="stMetric"]{background:white;border:1px solid #e3e9f0;border-radius:14px;padding:18px;color:#203a4f}[data-testid="stMetricLabel"],[data-testid="stMetricValue"],[data-testid="stMetricDelta"]{color:#203a4f!important}
 [data-testid="stForm"]{background:white;border:1px solid #e1e7ef;border-radius:14px;padding:22px}
+.stMarkdown p,.stMarkdown li,.stCaption,.stText,[data-testid="stCaptionContainer"],label{color:#36516a}
 .hero{background:#173b55;color:#fff;padding:30px 34px;border-radius:18px;margin:0 0 24px}.hero h2{color:white;margin:4px 0;font-size:2rem}.hero p{color:#b7cedd;margin:5px 0}.eyebrow{font-size:11px;letter-spacing:2px;color:#70d5c1}
 .source{border-left:3px solid #3ea996;background:#eef7f4;padding:12px 18px;margin:12px 0;color:#365c52}
 </style>''',unsafe_allow_html=True)
